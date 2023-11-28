@@ -13,5 +13,7 @@ I wrote these in the script language versions below. Functionality may be a litt
 
 * **Git Config Super Listing** - A color-coded listing of the git configuration properties for each environment (system, global, local) as well as an effective properties section. The effective properties section will show any overridden properties in the color of the environment from which they are overridden.
 
+* **Windows Terminal Multiple Launch** - Launch 2 or 4 pane windows terminal from command line, execute the given commands. Examples are ssh to multiple machines and running htop. Handy if you need to monitor multiple servers.
+
 
 
