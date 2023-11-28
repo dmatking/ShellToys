@@ -1,3 +1,4 @@
+# Designed to be added to $PROFILE
 function Show-GitConfigs {
     # Function to parse git config output into a hashtable
     function Parse-GitConfig {
@@ -56,3 +57,6 @@ function Show-GitConfigs {
 }
 
 Set-Alias -Name gitconfigs -Value Show-GitConfigs
+
+# Comment out the above and just use Show-GitConfigs if you don't want the alias
+```
