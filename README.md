@@ -1,7 +1,7 @@
 # ShellToys
 Interesting or ridiculously over-engineered command-line scripts. 
 
-I wrote these in the script language versions below. 
+I wrote these in the script language versions below. Functionality may be a little different in each scripting language.
 
 * PowerShell: 7.4.0 Core
 * Bash: GNU bash, version 5.0.17(1)-release (x86_64-pc-linux-gnu)
