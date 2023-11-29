@@ -40,33 +40,22 @@ def determine_effective_config(system_config, global_config, local_config):
     override_source = {}
     original_values = {}
 
-    # Load system configuration
-    for key, value in system_config.items():
-        effective_config[key] = value
-        original_source[key] = 'system'
-        original_values[key] = [('system', value)]
+    def process_config(config, source_label):
+        if config is not None:
+            for key, value in config.items():
+                if key in effective_config and effective_config[key] != value:
+                    override_source[key] = source_label
+                    original_values.setdefault(key, []).append((source_label, value))
+                effective_config[key] = value
+                if key not in original_source:
+                    original_source[key] = source_label
 
-    # Update with global configuration and track overrides and original values
-    for key, value in global_config.items():
-        if key in effective_config and effective_config[key] != value:
-            override_source[key] = 'global'
-            original_values.setdefault(key, []).append(('global', value))
-        effective_config[key] = value
-        if key not in original_source:
-            original_source[key] = 'global'
-
-    # Update with local configuration and track overrides and original values
-    for key, value in local_config.items():
-        if key in effective_config and effective_config[key] != value:
-            override_source[key] = 'local'
-            original_values.setdefault(key, []).append(('local', value))
-        effective_config[key] = value
-        if key not in original_source:
-            original_source[key] = 'local'
+    # Process system, global, and local configurations
+    process_config(system_config, 'system')
+    process_config(global_config, 'global')
+    process_config(local_config, 'local')
 
     return effective_config, original_source, override_source, original_values
-
-
 
 def main():
     parser = argparse.ArgumentParser(
