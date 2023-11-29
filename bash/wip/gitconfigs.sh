@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#This version is not working yet
+
 # Function to display configurations with color
 show_config() {
     local level=$1
