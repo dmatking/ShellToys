@@ -1,7 +1,9 @@
 # Designed to be added to $PROFILE
+# Information on using it as a script is at the bottom of the file
+
 function Show-GitConfigs {
     # Function to parse git config output into a hashtable
-    function Parse-GitConfig {
+    function Get-GitConfig {
         param ([string]$configLevel)
         $config = @{}
         git config $configLevel -l | ForEach-Object {
@@ -58,5 +60,6 @@ function Show-GitConfigs {
 
 Set-Alias -Name gitconfigs -Value Show-GitConfigs
 
-# Comment out the above and just use Show-GitConfigs if you don't want the alias
-```
+# Comment out the line above and uncomment the line below to run this file as a script. You will likely need to set -ExecutionPolicy to Bypass to run this as a script.  pwsh -ExecutionPolicy Bypass -File .\gitconfigs.ps1
+
+#Show-GitConfigs
