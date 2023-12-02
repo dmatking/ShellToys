@@ -14,9 +14,9 @@ function Show-GitConfigs {
     }
 
     # Collect configurations
-    $systemConfig = Parse-GitConfig --system
-    $globalConfig = Parse-GitConfig --global
-    $localConfig = Parse-GitConfig --local
+    $systemConfig = Get-GitConfig --system
+    $globalConfig = Get-GitConfig --global
+    $localConfig = Get-GitConfig --local
 
     # Display configurations with colors
     Write-Host "System Configuration:" -ForegroundColor Yellow
