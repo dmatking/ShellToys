@@ -15,7 +15,7 @@ def is_git_repository():
 def run_git_config(args):
     result = subprocess.run(['git', 'config'] + args,
                             capture_output=True, text=True)
-    if result.returncode != 0:
+    if result.returncode != 0 or result.stdout == "":
         return None
     config = {}
     for line in result.stdout.strip().split('\n'):
