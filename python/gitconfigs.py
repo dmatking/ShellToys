@@ -19,7 +19,7 @@ def run_git_config(args):
     result = subprocess.run(['git', 'config'] + args,
                             capture_output=True, text=True)
     if result.returncode != 0 or result.stdout == "":
-        return None
+        return {} # Return empty dictionary if no output or error
     config = {}
     for line in result.stdout.strip().split('\n'):
         key, value = line.split('=', 1)
@@ -66,14 +66,23 @@ def main():
     print_config(my_global, 'Global', COLORS['global'])
     print_config(local, 'Local', COLORS['local'])
 
+    # # Create system_out by taking items from system that are not in my_global or local
+    # system_out = {key: value for key, value in system.items() if (my_global is None or key not in my_global) and (local is None or key not in local)}
+
+    # # Create my_global_out by taking items from my_global that are also in system
+    # my_global_out = {key: value for key, value in (my_global or {}).items() if key in system}
+
+    # # Create local_out by taking items from local that are not in system_out or my_global_out
+    # local_out = {key: value for key, value in (local or {}).items() if key not in system_out and key not in my_global_out}
+
     # Create system_out by taking items from system that are not in my_global or local
-    system_out = {key: value for key, value in system.items() if (my_global is None or key not in my_global) and (local is None or key not in local)}
+    system_out = {key: value for key, value in system.items() if key not in my_global and key not in local}
 
     # Create my_global_out by taking items from my_global that are also in system
-    my_global_out = {key: value for key, value in (my_global or {}).items() if key in system}
+    my_global_out = {key: value for key, value in my_global.items() if key in system}
 
     # Create local_out by taking items from local that are not in system_out or my_global_out
-    local_out = {key: value for key, value in (local or {}).items() if key not in system_out and key not in my_global_out}
+    local_out = {key: value for key, value in local.items() if key not in system_out and key not in my_global_out}
 
 
     # Define the custom sort order
@@ -86,13 +95,13 @@ def main():
     # Merge the dictionaries and include source names in values with colors
     merged_dict = {}
 
-    for k, v in (system_out or {}).items():
+    for k, v in system_out.items():
         merged_dict[f'{k}'] = (v, 'system')
 
-    for k, v in (my_global_out or {}).items():
+    for k, v in my_global_out.items():
         merged_dict[f'{k}'] = (v, 'global')
 
-    for k, v in (local_out or {}).items():
+    for k, v in local_out.items():
         merged_dict[f'{k}'] = (v, 'local')
 
     # Add items from system
