@@ -1,6 +1,9 @@
 import subprocess
 import sys
 import argparse
+from colorama import init, Fore, Style
+
+init(autoreset=True)  # Initialize colorama
 
 
 def is_git_repository():
@@ -26,36 +29,21 @@ def run_git_config(args):
 
 def print_config(config, title, color_code):
     if config is not None:
-        print(f'\033[{color_code}m{title} Configuration:\033[0m')
+        print(f'{color_code}{title} Configuration:{Style.RESET_ALL}')
         for key, value in sorted(config.items()):
             print(f'    {key} = {value}')
     else:
-        print(f'\033[{color_code}m{title} Configuration: Not Found\033[0m')
+        print(f'{color_code}{title} Configuration: Not Found{Style.RESET_ALL}')
     print()
 
 
-def determine_effective_config(system_config, global_config, local_config):
-    effective_config = {}
-    original_source = {}
-    override_source = {}
-    original_values = {}
+# Define color mappings
+COLORS = {
+    'system': Fore.YELLOW,
+    'global': Fore.BLUE,
+    'local': Fore.GREEN,
+}
 
-    def process_config(config, source_label):
-        if config is not None:
-            for key, value in config.items():
-                if key in effective_config and effective_config[key] != value:
-                    override_source[key] = source_label
-                    original_values.setdefault(key, []).append((source_label, value))
-                effective_config[key] = value
-                if key not in original_source:
-                    original_source[key] = source_label
-
-    # Process system, global, and local configurations
-    process_config(system_config, 'system')
-    process_config(global_config, 'global')
-    process_config(local_config, 'local')
-
-    return effective_config, original_source, override_source, original_values
 
 def main():
     parser = argparse.ArgumentParser(
@@ -68,51 +56,83 @@ def main():
         print("Not inside a Git repository. Use --override to run anyway.")
         sys.exit(1)
 
-    # Colors dictionary
-    COLORS = {
-        'system': '38;5;228',  # Soft Yellow
-        'global': '38;5;111',  # Pale Blue or '38;5;250' for Light Gray
-        'local': '38;5;120',   # Light Green
-    }
-
     # Read configurations
-    system_config = run_git_config(['--system', '-l'])
-    global_config = run_git_config(['--global', '-l'])
-    local_config = run_git_config(['--local', '-l'])
+    system = run_git_config(['--system', '-l'])
+    my_global = run_git_config(['--global', '-l'])
+    local = run_git_config(['--local', '-l'])
 
     # Print configurations with colors
-    print_config(system_config, 'System', COLORS['system'])
-    print_config(global_config, 'Global', COLORS['global'])
-    print_config(local_config, 'Local', COLORS['local'])
+    print_config(system, 'System', COLORS['system'])
+    print_config(my_global, 'Global', COLORS['global'])
+    print_config(local, 'Local', COLORS['local'])
 
-    # Determine effective configuration
-    effective_config, original_source, override_source, original_values = determine_effective_config(
-        system_config, global_config, local_config)
+    # Create system_out by taking items from system that are not in my_global or local
+    system_out = {key: value for key, value in system.items() if (my_global is None or key not in my_global) and (local is None or key not in local)}
 
-    # Print effective configuration with color coding and color key
-    print('\033[35mEffective Configuration:\033[0m', end='  ')  # Magenta
+    # Create my_global_out by taking items from my_global that are also in system
+    my_global_out = {key: value for key, value in (my_global or {}).items() if key in system}
 
+    # Create local_out by taking items from local that are not in system_out or my_global_out
+    local_out = {key: value for key, value in (local or {}).items() if key not in system_out and key not in my_global_out}
+
+
+    # Define the custom sort order
+    sort_order = {
+        'system': 0,
+        'global': 1,
+        'local': 2,
+    }
+
+    # Merge the dictionaries and include source names in values with colors
+    merged_dict = {}
+
+    for k, v in (system_out or {}).items():
+        merged_dict[f'{k}'] = (v, 'system')
+
+    for k, v in (my_global_out or {}).items():
+        merged_dict[f'{k}'] = (v, 'global')
+
+    for k, v in (local_out or {}).items():
+        merged_dict[f'{k}'] = (v, 'local')
+
+    # Add items from system
+    if system is not None:
+        for k, v in system.items():
+            if k not in merged_dict:
+                merged_dict[f'{k}'] = (v, 'system')
+
+    # Add items from my_global
+    if my_global is not None:
+        for k, v in my_global.items():
+            if k not in merged_dict:
+                merged_dict[f'{k}'] = (v, 'global')
+
+    # Add items from local
+    if local is not None:
+        for k, v in local.items():
+            if k not in merged_dict:
+                merged_dict[f'{k}'] = (v, 'local')
+
+    # Sort the merged dictionary by keys
+    sorted_merged_dict = {k: v for k, v in sorted(merged_dict.items())}
+
+    # Print effective configuration with color coding
+    print(f'{Fore.MAGENTA}Effective Configuration:{Style.RESET_ALL}', end='  ')
+    
     # Print color key
     for label, color_code in COLORS.items():
-        print(f'\033[{color_code}m\u25A0 {label}\033[0m', end='  ')
+        print(f'{color_code}\u25A0 {label}{Style.RESET_ALL}', end='  ')
     print('\n')
 
-    for key, value in sorted(effective_config.items()):
-        source = override_source.get(key, original_source[key])
-        color_code = COLORS[source]
-        print(f'\033[{color_code}m    {key} = {value}\033[0m')
+    # Print the resulting dictionaries with colors based on source names  
+    for key, (value, source) in sorted_merged_dict.items():
+        source_color = {
+            'system': Fore.YELLOW,
+            'global': Fore.BLUE,
+            'local': Fore.GREEN,
+        }.get(source, Fore.RESET)
 
-        # Print overridden values with keys and indentation
-        if key in original_values and len(original_values[key]) > 1:
-            indent_level = 2
-            for source, old_value in reversed(original_values[key][:-1]):
-                indent = ' ' * indent_level
-                color_code = COLORS[source]
-                print(
-                    f'{indent}\033[{color_code}m    ^ {key} = {old_value}\033[0m')
-                indent_level += 4  # Increase indent for each level
-
-    print('\033[0m')  # Reset to default color after printing the configuration
+        print(f'    {source_color}{key}: {value}{Style.RESET_ALL}')
 
 
 # Execute main function
